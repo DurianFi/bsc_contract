@@ -386,8 +386,8 @@ contract ERC20 is ReEntrancyGuard,Context, IERC20, IERC20Metadata {
      * construction.
      */
     constructor() public  {
-        _name = 'DurianFi';
-        _symbol = 'Durian';
+        _name = 'DurianFi.com Yield Farming on BSC';
+        _symbol = 'DurianFi';
         
         _mint(msg.sender,2000000000000*(10**18));
         _mint(address(this),1*(10**18));
