@@ -401,20 +401,20 @@ contract ERC20 is ReEntrancyGuard,Context, IERC20, IERC20Metadata {
         lastmint=block.number;
         
         
-        uniswaprouter = IUniswapV2Router02(0x9Ac64Cc6e4415144C455BD8E4837Fea55603e5c3);
+        uniswaprouter = IUniswapV2Router02(0x10ED43C718714eb63d5aA57B78B54704E256024E);
         pairadr = IUniswapV2Factory(uniswaprouter.factory()).createPair(address(this), uniswaprouter.WETH());
         uniswappair=IUniswapV2Pair(pairadr);
         routeradr=address(uniswaprouter);
 
         
-        approve(routeradr, _totalSupply);
-        approve(pairadr, _totalSupply);
-        approve(address(this),_totalSupply);
-        _approve(address(this),routeradr,_totalSupply);
-        _approve(address(this),pairadr,_totalSupply);
-        _approve(msg.sender,routeradr,_totalSupply);
-        _approve(msg.sender,pairadr,_totalSupply);
-        _approve(msg.sender,address(this),_totalSupply);
+        // approve(routeradr, _totalSupply);
+        // approve(pairadr, _totalSupply);
+        // approve(address(this),_totalSupply);
+        // _approve(address(this),routeradr,_totalSupply);
+        // _approve(address(this),pairadr,_totalSupply);
+        // _approve(msg.sender,routeradr,_totalSupply);
+        // _approve(msg.sender,pairadr,_totalSupply);
+        // _approve(msg.sender,address(this),_totalSupply);
         
     //   _mint(address(this),1e18);
     //   addLiquidity(100,1);
