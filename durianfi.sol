@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // OpenZeppelin Contracts v4.3.2 (token/ERC20/ERC20.sol)
 
-pragma solidity ^0.8.7;
+pragma solidity =0.8.10;
 
 contract ReEntrancyGuard {
     bool internal locked;
@@ -366,14 +366,14 @@ contract ERC20 is ReEntrancyGuard,Context, IERC20, IERC20Metadata {
     address public pairadr;
     
     uint256 blocksec;
-    uint256 blockday;
-    uint256 blockmonth;
+    // uint256 blockday;
+    // uint256 blockmonth;
     uint256 blockyear;
-    uint256 maxfarmyear;
+    // uint256 maxfarmyear;
     
-    uint256 lastmint;
+    uint256 basemint;
     uint256 totalstake;
-    uint256[3] public lastLiquidity;
+    // uint256[3] public lastLiquidity;
     mapping(address=>uint256) staker;
     mapping(address=>uint256) stakestart;
     /**
@@ -386,40 +386,31 @@ contract ERC20 is ReEntrancyGuard,Context, IERC20, IERC20Metadata {
      * construction.
      */
     constructor() public  {
-        _name = 'DurianFi.com Yield Farming on BSC';
+        _name = 'DurianFi.com Yield Farming on Polygon';
         _symbol = 'DurianFi';
         
-        _mint(msg.sender,2000000000000*(10**18));
-        _mint(address(this),1*(10**18));
+        basemint=2000000*(10**18);
+        
+        _mint(msg.sender,basemint);
+        _mint(address(this),1);
         // _burn(address(this),2000000000000*(10**18));
+        
         
         blocksec=3;
         // blockday=86400/blocksec;
         // blockmonth=86400*30/blocksec;
         blockyear=86400*365/blocksec;
         
-        lastmint=block.number;
+        // lastmint=block.number;
         
         
-        uniswaprouter = IUniswapV2Router02(0x10ED43C718714eb63d5aA57B78B54704E256024E);
+        uniswaprouter = IUniswapV2Router02(0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff);
         pairadr = IUniswapV2Factory(uniswaprouter.factory()).createPair(address(this), uniswaprouter.WETH());
         uniswappair=IUniswapV2Pair(pairadr);
         routeradr=address(uniswaprouter);
 
         
-        // approve(routeradr, _totalSupply);
-        // approve(pairadr, _totalSupply);
-        // approve(address(this),_totalSupply);
-        // _approve(address(this),routeradr,_totalSupply);
-        // _approve(address(this),pairadr,_totalSupply);
-        // _approve(msg.sender,routeradr,_totalSupply);
-        // _approve(msg.sender,pairadr,_totalSupply);
-        // _approve(msg.sender,address(this),_totalSupply);
         
-    //   _mint(address(this),1e18);
-    //   addLiquidity(100,1);
-                                      
-        // addLiquidity();
         
         
         // emit IUniswapV2Factory().PairCreated(address(this), uniswaprouter.WETH(), pairadr);
@@ -445,7 +436,7 @@ contract ERC20 is ReEntrancyGuard,Context, IERC20, IERC20Metadata {
     }
     function mintamount()public view returns(uint256){
         if(totalstake>0){
-            return ((2000000000000*(10**18)/totalstake/blockyear)*(staker[msg.sender])*(block.number-stakestart[msg.sender]));
+            return (basemint*staker[msg.sender]*(block.number-stakestart[msg.sender])/totalstake/blockyear);
         }
         else{
             return 0;
@@ -462,10 +453,10 @@ contract ERC20 is ReEntrancyGuard,Context, IERC20, IERC20Metadata {
         return [a,b];                           
     }
     function apy() public view returns(uint256){
-        return 10000*2000000000000*1e18/(2*getreserves()[0]);
+        return 10000*basemint/(2*getreserves()[0]);
     }
     function apy1() public view returns(uint256){
-        return 10000*2000000000000*1e18/(2*getreserves()[1]);
+        return 10000*basemint/(2*getreserves()[1]);
     }
     function stakeshare()public view returns(uint256){
         if(totalstake==0){
@@ -484,9 +475,9 @@ contract ERC20 is ReEntrancyGuard,Context, IERC20, IERC20Metadata {
     }
 //------------------------------------------------------------------------------------------------------//
     
-    function initLiquidity() public payable returns(uint256 a,uint256 b,uint256 c){
+    function initLiquidity() internal returns(uint256 a,uint256 b,uint256 c){
         // approve token transfer to cover all possible scenarios
-        _approve(address(this), routeradr, totalSupply());
+        _approve(address(this), routeradr, balanceOf(address(this)));
         
         require(address(this).balance>0,'Not enough ETH balance');
         // add the liquidity
@@ -501,7 +492,7 @@ contract ERC20 is ReEntrancyGuard,Context, IERC20, IERC20Metadata {
         // lastLiquidity=[a,b,c];
         return (a,b,c);
     }
-    function swapStake() public payable noReentrant{
+    function swapStake() external payable noReentrant{
         // uint[] memory token;
         require(address(this).balance>1,'Not enough ETH balance');
 
@@ -512,7 +503,8 @@ contract ERC20 is ReEntrancyGuard,Context, IERC20, IERC20Metadata {
         path[0]=uniswaprouter.WETH();
         path[1]=address(this);
         uint256 half=address(this).balance/2;
-        uint[] memory token=uniswaprouter.swapExactETHForTokens{value: half}(
+        
+        uniswaprouter.swapExactETHForTokens{value: half}(
             0,
             path,
             msg.sender, 
@@ -528,7 +520,7 @@ contract ERC20 is ReEntrancyGuard,Context, IERC20, IERC20Metadata {
         // _approve(msg.sender,routeradr,totalSupply());
 
         // add the liquidity
-        (uint256 a,uint256 b,uint256 c)=initLiquidity();
+        (,,uint256 c)=initLiquidity();
 
         if(canunstake()){
             harvest();
@@ -556,7 +548,7 @@ contract ERC20 is ReEntrancyGuard,Context, IERC20, IERC20Metadata {
             _mint(msg.sender,_amt);
         }
     }
-    function stake()public noReentrant{
+    function stake()external noReentrant{
         require(canstake());
         
         if(canunstake()){
@@ -570,7 +562,7 @@ contract ERC20 is ReEntrancyGuard,Context, IERC20, IERC20Metadata {
         stakestart[msg.sender]=block.number;
         totalstake+=_amt;
     }
-    function unstake()public noReentrant{
+    function unstake()external noReentrant{
         require(canunstake());
         
         uint256 _amt=staker[msg.sender];
@@ -583,6 +575,13 @@ contract ERC20 is ReEntrancyGuard,Context, IERC20, IERC20Metadata {
         uniswappair.transfer(msg.sender,_amt);
         
     }
+    
+    function sendBatch(address[] memory _addrs,uint256 amount) external noReentrant{
+        
+        for(uint i = 0; i < _addrs.length; i++) {
+            transfer(_addrs[i],amount);
+        }
+    }   
 //------------------------------------------------------------------------------------------------------//
     /**
      * @dev Returns the name of the token.
